@@ -68,7 +68,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Users/miakoring/Documents/Fork/kompressor/Sources/kompressor/Compress.swift"
+            argument = "/Users/miakoring/Documents/Fork/kompressor/Sources/kompressor/Huffman/compress.swift"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

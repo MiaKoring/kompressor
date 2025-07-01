@@ -9,14 +9,14 @@ import Foundation
 /// This is a simple Heap implementation which can be used as a priority queue.
 class Heap<T:Comparable> {
     typealias HeapComparator<C: Comparable> = (_ l:C,_ r:C) -> Bool
-    var heap = [T]()
+    private var heap = [T]()
     var count:Int {
         get {
             heap.count
         }
     }
     
-    var comparator:HeapComparator<T>
+    private let comparator:HeapComparator<T>
     
     
     /// bubbleUp is called after appending the item to the end of the queue.  Depending on the comparator,
@@ -39,8 +39,8 @@ class Heap<T:Comparable> {
     /// Heapify the current heap.  This method walks down the children and rearranges them in comparator order.
     /// - Parameter idx: index to heapify.
     private func heapify(_ idx:Int) {
-        var left = idx * 2 + 1
-        var right = idx * 2 + 2
+        let left = idx * 2 + 1
+        let right = idx * 2 + 2
         
         var comp = idx
         
@@ -58,6 +58,12 @@ class Heap<T:Comparable> {
     
     init(comparator:@escaping HeapComparator<T>) {
         self.comparator = comparator
+    }
+    
+    func add(_ arr: [T]) {
+        for value in arr {
+            insert(item: value)
+        }
     }
     
     

@@ -30,7 +30,7 @@ struct Decompress: ParsableCommand {
         
         let originURL = URL(fileURLWithPath: originPath)
         let pathWithoutExtension = originURL.deletingPathExtension().path
-        let destinationPath = destination ?? pathWithoutExtension + ".kompressor"
+        let destinationPath = destination ?? pathWithoutExtension
         let destinationURL = URL(fileURLWithPath: destinationPath)
         
         do {
@@ -46,14 +46,13 @@ struct Decompress: ParsableCommand {
         
         var reader = BitReader(data: file.b)
         
-        var reconstructed = ""
+        var reconstructed = [UInt8]()
         
         var currentNode = tree
         
-        while reader.remainingBits > file.h.p {
-            print(reader.remainingBits)
-            if let char = currentNode?.character {
-                reconstructed.append(char)
+        while reader.remainingBits >= file.h.p {
+            if let byte = currentNode?.byte {
+                reconstructed.append(byte)
                 currentNode = tree
             }
             guard let bit = reader.readBit() else {
@@ -65,15 +64,15 @@ struct Decompress: ParsableCommand {
             currentNode = nextNode
         }
         
-        guard let reconstructedData = reconstructed.data(using: .utf8) else {
-            throw E.internalError(description: "Decoded string isn't convertible to utf8")
-        }
-        return reconstructedData
+        print(tree.debugDescription)
+        print(currentNode.debugDescription)
+        print(tree == currentNode)
+        
+        return Data(reconstructed)
     }
     
     enum DecompressionError: Error, CustomStringConvertible {
         case invalidOriginPath
-        case invalidEncoding
         case internalError(description: String)
         case writeFailed(path: String, underlyingError: Error)
         case notAKompressorFile
@@ -82,8 +81,6 @@ struct Decompress: ParsableCommand {
             switch self {
             case .invalidOriginPath:
                 "The provided 'origin-path' argument is not a valid path."
-            case .invalidEncoding:
-                "The file content could not be read as UTF-8 text."
             case .writeFailed(let path, let error):
                 "Failed to write to destination path '\(path)'. Reason: \(error.localizedDescription)"
             case .internalError(let description):

@@ -104,7 +104,7 @@ struct BitWriter {
             currentByte = 0
             bitsInCurrentByte = 0
         }
-        return (data: data, padding: (8 - bitsInCurrentByte))
+        return (data: data, padding: bitsInCurrentByte == 0 ? 0: (8 - bitsInCurrentByte))
     }
 }
 struct BitReader {
@@ -155,5 +155,19 @@ struct BitReader {
             }
         }
         return byte
+    }
+    
+    mutating func readBits(count: Int) -> UInt? {
+        var bits: UInt = 0
+        
+        for i in (0..<count).reversed() {
+            guard let bit = readBit() else {
+                return nil
+            }
+            if bit {
+                bits |= (1 << i)
+            }
+        }
+        return bits
     }
 }

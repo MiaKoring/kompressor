@@ -21,15 +21,11 @@ struct Compress: ParsableCommand {
             throw E.invalidOriginPath
         }
         
-        guard let fileContent = String(data: data, encoding: .utf8) else {
-            throw E.invalidEncoding
-        }
-        
-        let compressedOutput = try compress(fileContent)
+        let compressedOutput = try compress(data)
         
         // If compression was aborted, the output will be the same as the input.
         // We can avoid writing the file in that case.
-        guard compressedOutput.count < fileContent.count else {
+        guard compressedOutput.count < data.count else {
             print("Compression would not reduce file size. No output file was written.")
             return
         }
@@ -47,51 +43,49 @@ struct Compress: ParsableCommand {
         }
     }
     
-    private func compress(_ data: String) throws -> Data {
+    private func compress(_ data: Data) throws -> Data {
+        let data = [UInt8](data)
         let counts = count(data)
         let treeRoot = try buildTree(counts)
         let map = buildMap(root: treeRoot)
         
         var bitOperator = BitWriter()
         
-        for char in data {
-            guard let sequence = map["\(char)"] else {
-                throw E.internalError(description: "character doesn't exist in map")
+        for byte in data {
+            guard let sequence = map[byte] else {
+                throw E.internalError(description: "byte doesn't exist in map")
             }
             for op in sequence {
                 bitOperator.write(bit: op)
             }
         }
         
-        let (data, padding) = bitOperator.getData()
+        let (compressed, padding) = bitOperator.getData()
         
-        return try PropertyListEncoder().encode(KompressorFile(h: .init(p: padding, t: treeRoot.serializeToCompactData()), b: data))
+        return try PropertyListEncoder().encode(KompressorFile(h: .init(p: padding, t: treeRoot.serializeToCompactData()), b: compressed))
     }
     
-    private func count(_ input: String) -> [Character: Int] {
-        var counts = [Character: Int]()
+    private func count(_ input: [UInt8]) -> [UInt8: Int] {
+        var counts = [UInt8: Int]()
         
-        input.forEach { char in
-            counts[char, default: 0] += 1
+        input.forEach { byte in
+            counts[byte, default: 0] += 1
         }
         
         return counts
     }
     
-    private func buildTree(_ counts: [Character: Int]) throws -> HuffmanNode {
-        let heap = Heap<HuffmanNode>{ lhs, rhs in
-            lhs.frequency < rhs.frequency
-        }
-        
+    private func buildTree(_ counts: [UInt8: Int]) throws -> HuffmanNode {
         //Convert KV pairs to leaf nodes
         let leafNodes = counts.map { key, value in
-            HuffmanNode(character: key, frequency: value)
+            HuffmanNode(byte: key, frequency: value)
         }
         
         //initialize the Heap
-        for node in leafNodes {
-            heap.insert(item: node)
+        let heap = Heap<HuffmanNode>{ lhs, rhs in
+            lhs.frequency < rhs.frequency
         }
+        heap.add(leafNodes)
         
         while heap.count > 1 {
             guard let leftNode = heap.popTop(), let rightNode = heap.popTop() else {
@@ -102,22 +96,22 @@ struct Compress: ParsableCommand {
         }
         
         guard let top = heap.getTop() else {
-            throw E.tooFewCharacters
+            throw E.tooFewBytes
         }
         
         return top
     }
     
-    private func buildMap(root: HuffmanNode) -> [String: [Bool]] {
-        var map = [String: [Bool]]()
+    private func buildMap(root: HuffmanNode) -> [UInt8: [Bool]] {
+        var map = [UInt8: [Bool]]()
         
         traverse(node: root, map: &map, currentPath: [])
         
         return map
         
-        func traverse(node: HuffmanNode, map: inout [String: [Bool]], currentPath: [Bool]) {
-            if let char = node.character {
-                map["\(char)"] = currentPath
+        func traverse(node: HuffmanNode, map: inout [UInt8: [Bool]], currentPath: [Bool]) {
+            if let byte = node.byte {
+                map[byte] = currentPath
                 return
             }
             
@@ -142,7 +136,7 @@ struct Compress: ParsableCommand {
     enum CompressionError: Error, CustomStringConvertible {
         case invalidOriginPath
         case invalidEncoding
-        case tooFewCharacters
+        case tooFewBytes
         case internalError(description: String)
         case writeFailed(path: String, underlyingError: Error)
         
@@ -151,11 +145,11 @@ struct Compress: ParsableCommand {
             case .invalidOriginPath:
                 "The provided 'origin-path' argument is not a valid path."
             case .invalidEncoding:
-                "The file content could not be read as UTF-8 text."
+                "The file content could not be read."
             case .writeFailed(let path, let error):
                 "Failed to write to destination path '\(path)'. Reason: \(error.localizedDescription)"
-            case .tooFewCharacters:
-                "File must contain at least one character"
+            case .tooFewBytes:
+                "File contains an invalid amount of bytes"
             case .internalError(let description):
                 "An internal Error occured: \(description)"
             }
@@ -166,3 +160,4 @@ struct Compress: ParsableCommand {
         }
     }
 }
+//

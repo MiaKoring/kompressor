@@ -52,15 +52,15 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = "decompress"
+            argument = "lz77-decompress"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "/Users/miakoring/Documents/Fork/kompressor/Sources/kompressor/Huffman/compress.kompressor"
+            argument = "/Users/miakoring/Downloads/sample3.lzkompressor"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-d /Users/miakoring/Documents/Fork/kompressor/Sources/kompressor/Huffman/Compresslel.hdgf"
+            argument = "-d /Users/miakoring/Downloads/sample3.result"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

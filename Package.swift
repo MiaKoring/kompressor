@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
     name: "kompressor",
     platforms: [
-        .macOS(.v13)
+        .macOS(.v26)
     ],
     products: [
         // Products define the executables and libraries a package produces, making them visible to other packages.

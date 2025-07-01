@@ -9,7 +9,7 @@ import Foundation
 struct KompressorFile: Codable {
     ///header
     let h: Header
-    //////body
+    ///body
     let b: Data
     struct Header: Codable {
         ///padding
